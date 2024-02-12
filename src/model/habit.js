@@ -50,11 +50,11 @@ export default class habit{
             }
     
             // Convert ObjectId to string
-            const userId = userData._id.toString();
+            const userId = userData.userid;
             console.log("userId is", userId);
     
             // Find the habit for the user
-            const habitData = await habitModel.findOne({ habitName });
+            const habitData = await habitModel.findOne({ habitName, userId });
             console.log("Habit Data", habitData);
     
             if (!habitData) {
