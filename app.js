@@ -35,7 +35,7 @@ app.get('/habitTracker',(req, res)=>{
     RouteController.getHabitTrackerPage(req, res);
 })
 
-
+// For adding a New User
 app.post('/submit-user-info', async (req, res) => {
     try {
         const { userId, userName } = req.body;
@@ -48,6 +48,7 @@ app.post('/submit-user-info', async (req, res) => {
     }
 });
 
+// For adding a new habit for a User logged In
 app.post('/AddNew-habit',async (req, res)=> {
     try{
         const {userId, habitName} = req.body;
@@ -58,6 +59,7 @@ app.post('/AddNew-habit',async (req, res)=> {
     }
 })
 
+// Request for updating a status of habit on the specified day 
 app.post('/update-habit-status', async (req, res)=>{
     try{
         console.log("Radio button clicked");
