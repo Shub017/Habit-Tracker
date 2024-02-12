@@ -1,0 +1,448 @@
+
+<!-- Include Tailwind CSS -->
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+<!-- Main modal -->
+<div id="authentication-modal" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+    <div class="relative p-4 w-full max-w-md max-h-full">
+        <!-- Modal content -->
+        <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
+            <!-- Modal header -->
+            <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
+                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+                    Welcome to the Habit Tracker!
+                </h3>
+            </div>
+            <!-- Modal body -->
+            <div class="p-4 md:p-5">
+                <form id="userInfoForm" class="space-y-4">
+                    <div>
+                        <label for="userId" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">User ID</label>
+                        <input type="text" id="userId" name="userId" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" required>
+                    </div>
+                    <div>
+                        <label for="userName" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Name</label>
+                        <input type="text" id="userName" name="userName" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" required>
+                    </div>
+                    <button type="button" class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800" onclick="submitUserInfo()">Submit</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<table class="table table-primary">
+    <thead id="habitTable">
+        <!-- Header row is dynamically generated -->
+    </thead>
+    <tbody>
+        <!-- Habit rows are dynamically generated -->
+    </tbody>
+</table>
+
+<input type="text" id="newHabitName" placeholder="Enter Habit Name" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" required>
+<button type="button" class="btn btn-danger" onclick="addNewHabit()">Add New Habit</button>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        tableRow = 0;
+        // #f6f6f4 -white
+        // #4573f9 -blue
+        const color = "#f6f6f4"; 
+        changeBackgroundColor(color);
+
+        // Show the modal when the script is loaded
+        const authenticationModal = document.getElementById('authentication-modal');
+        authenticationModal.classList.remove('hidden');
+
+        // Get the thead elements
+        const habitTable = document.getElementById('habitTable');
+
+        // Number of habits
+        const days = 7;
+
+        // Populate the header with date and day cells
+        const headerRow = document.createElement('tr');
+        headerRow.innerHTML = '<th scope="col">#</th><th scope="col">Habits</th>';
+
+        const dateValues = []; // Array to store date values
+        for (let j = 0; j < days; j++) {
+            const thDateAndDay = document.createElement('th');
+            const currentDate = new Date();
+            currentDate.setDate(currentDate.getDate() - j);
+            const options = { weekday: 'short', month: 'short', day: 'numeric' };
+            const formattedDate = currentDate.toLocaleDateString('en-US', options);
+            thDateAndDay.textContent = formattedDate;
+            headerRow.appendChild(thDateAndDay);
+
+            dateValues.push(currentDate.toISOString().split('T')[0]); // Store the date value
+        }
+
+        // Append the header row to the thead
+        habitTable.appendChild(headerRow);
+
+        // Attach event listener to the entire table to handle radio button clicks
+        habitTable.addEventListener('change', handleRadioChange);
+
+        const habitTableBody = document.querySelector('tbody');
+        habitTableBody.addEventListener('change', handleRadioChange);
+
+
+    });
+
+    function addNewHabit() {
+        tableRow++;
+        const habitTableBody = document.querySelector('tbody');
+        const newHabitNameInput = document.getElementById('newHabitName');
+        const newHabitName = newHabitNameInput.value;
+
+        if (!newHabitName) {
+            alert("Please enter a habit name.");
+            return;
+        }
+
+        
+            const userId = document.getElementById('userId').value;
+
+        // Prepare the data to be sent in the POST request
+        const postData = {
+            userId: userId,
+            habitName: newHabitName,
+            };
+
+        // Send a POST request to the server
+        fetch('/AddNew-habit', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+        },
+            body: JSON.stringify(postData),
+        })
+
+        const newRow = document.createElement('tr');
+        const habitNumberCell = document.createElement('th');
+        habitNumberCell.setAttribute('scope', 'row');
+        habitNumberCell.textContent = tableRow;
+        const habitNameCell = document.createElement('td');
+        habitNameCell.textContent = newHabitName;
+        habitNameCell.setAttribute('contenteditable', 'true');
+        newRow.appendChild(habitNumberCell);
+        newRow.appendChild(habitNameCell);
+
+        for (let i = 1; i <= 7; i++) {
+            const habitDayCell = document.createElement('td');
+
+            // Radio 1 button for done status
+            const RadioContainer1 = document.createElement('div')
+            const Radio1 = document.createElement('input');
+            Radio1.classList.add("form-check-input");
+            Radio1.setAttribute("type","radio");
+            Radio1.name = 'inlineRadioOptions'+ `${tableRow}`+`${i}`;
+            console.log(tableRow*i); 
+            Radio1.id = `inlineRadio${i + 1}`; 
+            Radio1.value = "Done";
+
+            const label1 = document.createElement('label');
+            label1.classList.add('form-check-label')
+            label1.for = `inlineRadio${i + 1}`;
+
+            // Adding icon
+            const image1 = document.createElement('img');
+            image1.src = "/images/checked.png";
+            label1.append(image1);
+
+            RadioContainer1.append(Radio1);
+            RadioContainer1.append(label1);
+
+            // Radio 2 button for not done status
+            const RadioContainer2 = document.createElement('div')
+            const Radio2 = document.createElement('input');
+            Radio2.classList.add("form-check-input");
+            Radio2.setAttribute("type","radio");
+            Radio2.name = 'inlineRadioOptions'+ `${tableRow}`+`${i}`;
+            Radio2.id = `inlineRadio${i + 2}`; 
+            
+            // Adding Icon
+            const image2 = document.createElement('img');
+            image2.src = "/images/notDone.png";
+            Radio2.value = "notDone";
+
+            const label2 = document.createElement('label');
+            label2.classList.add('form-check-label')
+            label2.for = `inlineRadio${i + 2}`;
+            label2.appendChild(image2);
+
+            RadioContainer2.append(Radio2);
+            RadioContainer2.append(label2);
+
+            newRow.appendChild(habitDayCell);
+
+            // Code for radio button 3 (None)
+            const RadioContainer3 = document.createElement('div');
+            const Radio3 = document.createElement('input');
+            Radio3.classList.add("form-check-input");
+            Radio3.setAttribute("type", "radio");
+            Radio3.name = 'inlineRadioOptions' + `${tableRow}` + `${i}`;
+            Radio3.id = `inlineRadio${i * 3}`; // Use a unique ID for each radio button
+            Radio3.value = "None";
+
+            const label3 = document.createElement('label');
+            label3.classList.add('form-check-label');
+            label3.for = `inlineRadio${i * 3}`;
+
+            // Adding Icon
+            const image3 = document.createElement('img');
+            // You can add an image source for the "None" option if needed
+            image3.src = "/images/none.png";
+            label3.appendChild(image3);
+
+            RadioContainer3.append(Radio3);
+            RadioContainer3.append(label3);
+
+            // Append all radio containers to the habitDayCell
+            habitDayCell.appendChild(RadioContainer1);
+            habitDayCell.appendChild(RadioContainer2);
+            habitDayCell.appendChild(RadioContainer3);
+
+            // Append habitDayCell to the newRow
+            newRow.appendChild(habitDayCell);
+        }
+
+
+        habitTableBody.appendChild(newRow);
+
+        // Clear the input field after adding a new habit
+        newHabitNameInput.value = '';
+
+        // Add event listener for in-place editing
+        habitNameCell.addEventListener('click', function () {
+            habitNameCell.setAttribute('contenteditable', 'true');
+        });
+    }
+
+    function submitUserInfo() {
+    const userId = document.getElementById('userId').value;
+    const userName = document.getElementById('userName').value;
+
+    // Validate user input if needed
+
+    // Make AJAX request to the server
+    fetch('/submit-user-info', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId, userName }),
+    })
+        .then(response => response.json())
+        .then(data => {
+            // Handle server response if needed
+            console.log(data);
+
+            // Create rows for habits and set default values for radio buttons
+            createRowsForHabits(data);
+
+            console.log(typeof(data));
+
+            closeModal();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+
+    function closeModal() {
+        const authenticationModal = document.getElementById('authentication-modal');
+        authenticationModal.classList.add('hidden');
+    }
+
+    function createRowsForHabits(habitsData) {
+        const habitTableBody = document.querySelector('tbody');
+
+        const habitsArray = Array.isArray(habitsData) ? habitsData : Object.values(habitsData);
+        const habits = habitsArray[1];
+        console.log("Converted habit Array", habitsArray, typeof(habitsArray));
+        console.log("testing habit", habits);
+        try{
+            habits.forEach((habit, index) => {
+                tableRow++;
+                const newRow = document.createElement('tr');
+                const habitNumberCell = document.createElement('th');
+                habitNumberCell.setAttribute('scope', 'row');
+                habitNumberCell.textContent = index + 1;
+                const habitNameCell = document.createElement('td');
+                habitNameCell.textContent = habit.habitName;
+                console.log("This is the habit you tracked", habit);
+                habitNameCell.setAttribute('contenteditable', 'true');
+                newRow.appendChild(habitNumberCell);
+                newRow.appendChild(habitNameCell);
+
+                for (let i = 1; i <= 7; i++) {
+                    const habitDayCell = document.createElement('td');
+
+                    // Radio one button for status Done
+                    const RadioContainer1 = document.createElement('div');
+                    const Radio1 = document.createElement('input');
+                    Radio1.classList.add("form-check-input");
+                    Radio1.setAttribute("type", "radio");
+                    
+                    Radio1.name = 'inlineRadioOptions'+ `${tableRow}`+`${i}`;
+                    Radio1.id = `inlineRadio${i + 1}`; // Use a unique ID for each radio button
+                    Radio1.value = "Done";
+
+                    const label1 = document.createElement('label');
+                    label1.classList.add('form-check-label');
+                    label1.for = `inlineRadio${i + 1}`;
+
+                    // Adding icon
+                    const image1 = document.createElement('img');
+                    image1.src = "/images/checked.png";
+                    label1.append(image1);
+
+                    RadioContainer1.append(Radio1);
+                    RadioContainer1.append(label1);
+
+                    // Radio 2 button for not Done
+                    const RadioContainer2 = document.createElement('div');
+                    const Radio2 = document.createElement('input');
+                    Radio2.classList.add("form-check-input");
+                    Radio2.setAttribute("type", "radio");
+                    Radio2.name = 'inlineRadioOptions'+ `${tableRow}`+`${i}`;
+                    Radio2.id = `inlineRadio${i + 2}`; // Use a unique ID for each radio button
+
+                    // Adding Icon
+                    const image2 = document.createElement('img');
+                    image2.src = "/images/notDone.png";
+                    Radio2.value = "notDone";
+
+                    const label2 = document.createElement('label');
+                    label2.classList.add('form-check-label');
+                    label2.for = `inlineRadio${i + 2}`;
+                    label2.appendChild(image2);
+
+                    RadioContainer2.append(Radio2);
+                    RadioContainer2.append(label2);
+
+                    
+
+                    // Code for radio button 3 (None)
+                    const RadioContainer3 = document.createElement('div');
+                    const Radio3 = document.createElement('input');
+                    Radio3.classList.add("form-check-input");
+                    Radio3.setAttribute("type", "radio");
+                    Radio3.name = 'inlineRadioOptions' + `${tableRow}` + `${i}`;
+                    Radio3.id = `inlineRadio${i * 3}`; // Use a unique ID for each radio button
+                    Radio3.value = "None";
+
+                    const label3 = document.createElement('label');
+                    label3.classList.add('form-check-label');
+                    label3.for = `inlineRadio${i * 3}`;
+
+                    // Adding Icon
+                    const image3 = document.createElement('img');
+                    // You can add an image source for the "None" option if needed
+                    image3.src = "/images/none.png";
+                    label3.appendChild(image3);
+
+                    RadioContainer3.append(Radio3);
+                    RadioContainer3.append(label3);
+
+                    // Append all radio containers to the habitDayCell
+                    habitDayCell.appendChild(RadioContainer1);
+                    habitDayCell.appendChild(RadioContainer2);
+                    habitDayCell.appendChild(RadioContainer3);
+
+                    // Append habitDayCell to the newRow
+                    newRow.appendChild(habitDayCell);
+
+                    // Check if the habit has progress for the current date
+                    const currentDate = new Date();
+                    currentDate.setDate(currentDate.getDate() - i + 1);
+                    const formattedDate = currentDate.toISOString().split('T')[0];
+
+                    // Check if habit.progress is defined before trying to find progress
+                    if (habit.progress && Array.isArray(habit.progress)) {
+                        const progressForDate = habit.progress.find(item => item.date === formattedDate);
+                    if (progressForDate) {
+                        // Set the corresponding radio button to be checked by default
+                        if (progressForDate.status === "Done") {
+                            Radio1.checked = true;
+                        } else if (progressForDate.status === "notDone") {
+                            Radio2.checked = true;
+                        } else if (progressForDate.status === "None"){
+                            Radio3.checked = true;
+                        }
+                    }
+                }
+
+                    newRow.appendChild(habitDayCell);
+                }
+
+                habitTableBody.appendChild(newRow);
+
+                // Add event listener for in-place editing
+                habitNameCell.addEventListener('click', function () {
+                    habitNameCell.setAttribute('contenteditable', 'true');
+                });
+            });
+        }catch(err){
+            console.log(err);
+        }
+    }
+}
+
+
+    
+
+    // Function to handle radio button clicks
+    function handleRadioChange(event) {
+        const target = event.target;
+        console.log("Radio button clicked");
+
+    // Check if the clicked element is a radio button
+        if (target.type === 'radio') {
+            const cell = target.closest('td'); // Find the closest parent cell (td) of the clicked radio button
+
+            const row = cell.closest('tr'); // Find the parent row of the clicked radio button
+            const habitName = row.querySelector('td').textContent; // Get habit name from the first cell of the row
+            const dateColumnIndex = cell.cellIndex; // Get the index of the cell containing the clicked radio button
+            
+            console.log(row, habitName);
+            console.log("dateColumnIndex", dateColumnIndex);
+
+            // Calculate today's date based on the clicked column
+            const currentDate = new Date();
+            console.log("currentDate: ", currentDate);
+            currentDate.setDate(currentDate.getDate() - dateColumnIndex + 2);
+
+            console.log(currentDate);
+            const formattedDate = currentDate.toISOString().split('T')[0];
+            console.log("formattedDate is", formattedDate);
+
+            const postData = {
+                userId: document.getElementById('userId').value,
+                habitName: habitName,
+                date: formattedDate, // Use the date value from the header directly
+                status: target.value, // Get the value of the clicked radio button
+            };
+
+
+
+            // Send a POST request to the server
+            fetch('/update-habit-status', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(postData),
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Handle the server response if needed
+                console.log(data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+}
+</script>

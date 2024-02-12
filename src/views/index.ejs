@@ -1,0 +1,14 @@
+<button type="button" id="beginButton" class="btn btn-primary d-block text-capitalize fw-bold mx-auto my-5 p-4">Let's Begin!!!</button>
+
+<script>
+    document.addEventListener('DOMContentLoaded', ()=>{
+        // Find the button by its id
+        var beginButton = document.querySelector('#beginButton');
+
+        // Add a click event listener to the button
+        beginButton.addEventListener('click', ()=>{
+            // Perform an action when the button is clicked
+            window.location.href = 'habitTracker';
+        });
+    });
+</script>
